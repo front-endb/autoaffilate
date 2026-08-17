@@ -1,7 +1,13 @@
 .env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
 pipeline.db
 output/
 uvicorn_web.log
 uvicorn_test.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

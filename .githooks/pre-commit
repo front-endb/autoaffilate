@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Blocks commits that add a real .env file or content matching known API key
+# formats, as a second line of defense on top of .gitignore. Enable once with:
+#   git config core.hooksPath .githooks
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+# 1. Never allow an actual .env file (any name matching .env / .env.*, except .env.example)
+for f in $staged; do
+  base=$(basename "$f")
+  if [[ "$base" == ".env" || ( "$base" == .env.* && "$base" != ".env.example" ) ]]; then
+    echo "BLOCKED: '$f' looks like a real .env file — never commit secrets." >&2
+    exit 1
+  fi
+done
+
+# 2. Scan staged text content for known live API key formats
+patterns=(
+  'sk-ant-api[0-9]{2}-[A-Za-z0-9_-]{20,}'   # Anthropic
+  'AIza[0-9A-Za-z_-]{35}'                    # Google (Gemini/AI Studio)
+  'sk-[A-Za-z0-9]{32,}'                      # generic sk- style keys
+)
+
+for f in $staged; do
+  [[ -f "$f" ]] || continue
+  git diff --cached --diff-filter=ACM -- "$f" >/dev/null 2>&1 || continue
+  content=$(git show ":$f" 2>/dev/null) || continue
+  for p in "${patterns[@]}"; do
+    if echo "$content" | grep -Eq "$p"; then
+      echo "BLOCKED: '$f' contains something that matches a live API key pattern ($p)." >&2
+      echo "If this is a false positive, commit deliberately with --no-verify." >&2
+      exit 1
+    fi
+  done
+done
+
+exit 0

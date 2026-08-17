@@ -10,7 +10,10 @@
 cd pin_pipeline
 pip install -r requirements.txt
 copy .env.example .env
+git config core.hooksPath .githooks
 ```
+
+Останній рядок вмикає pre-commit хук, який блокує коміт, якщо туди випадково потрапить реальний `.env` або текст, схожий на живий API-ключ (Anthropic, Gemini) — додатковий рівень захисту поверх `.gitignore`.
 
 ## Тест без жодного ключа (CLI)
 
