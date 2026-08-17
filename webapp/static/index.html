@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Pin Pipeline</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">
+    <div class="name">PIN PIPELINE</div>
+    <div class="tag">trend → feed → claude → images → pinterest</div>
+  </div>
+  <div class="nav-item active" data-view="dashboard">Dashboard</div>
+  <div class="nav-item" data-view="trends">Trends</div>
+  <div class="nav-item" data-view="feed">Feed</div>
+  <div class="nav-item" data-view="run">Run</div>
+  <div class="nav-item" data-view="history">History</div>
+  <div class="nav-item" data-view="settings">Settings</div>
+  <div id="status-mini"></div>
+</div>
+
+<div id="main">
+
+  <!-- Dashboard -->
+  <div class="view active" id="view-dashboard">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Поточний режим інтеграцій і стан проєкту.</p>
+    <div class="grid" id="status-grid"></div>
+    <div class="card">
+      <div class="stat-label">Як це працює</div>
+      <p style="margin:8px 0 0;line-height:1.6">
+        Тренд (Pinterest Trends, вручну) → фільтр Temu affiliate-фіду → Claude пише
+        image-промпти та pin copy → генерація зображень → публікація через
+        Pinterest API v5. Без ключів усе працює в mock-режимі.
+      </p>
+    </div>
+  </div>
+
+  <!-- Trends -->
+  <div class="view" id="view-trends">
+    <h1>Trends</h1>
+    <p class="subtitle">Онови раз на тиждень з pinterest.com/business/trends.</p>
+    <div id="trends-list"></div>
+    <button id="add-trend">+ Додати тренд</button>
+    <button class="primary" id="save-trends">Зберегти всі</button>
+    <div class="hint" id="trends-save-status"></div>
+  </div>
+
+  <!-- Feed -->
+  <div class="view" id="view-feed">
+    <h1>Feed</h1>
+    <p class="subtitle">Завантаж Temu affiliate product feed (CSV/JSON) і подивись, що пройде фільтри.</p>
+    <div class="card">
+      <label>Завантажити новий фід</label>
+      <input type="file" id="feed-file" accept=".csv,.json">
+      <button id="upload-feed">Завантажити</button>
+      <div class="hint" id="upload-status"></div>
+
+      <label>Фід</label>
+      <select id="feed-select"></select>
+      <label>Тренд (категорія фільтра)</label>
+      <select id="feed-trend-select"></select>
+      <label>Ліміт продуктів</label>
+      <input type="number" id="feed-limit" value="10" min="1" max="100">
+      <button class="primary" id="preview-feed">Preview</button>
+    </div>
+    <div class="card">
+      <div id="feed-results" class="empty">Ще нічого не перевірено.</div>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <div class="view" id="view-run">
+    <h1>Run</h1>
+    <p class="subtitle">Запустити пайплайн: тренд → продукти → зображення → пін-копірайт → Pinterest.</p>
+    <div class="card">
+      <label>Фід</label>
+      <select id="run-feed-select"></select>
+      <label>Тренд</label>
+      <select id="run-trend-select"></select>
+      <label>Ліміт продуктів</label>
+      <input type="number" id="run-limit" value="2" min="1" max="50">
+      <label><input type="checkbox" id="run-post"> Реально публікувати (--post). Без токена все одно dry-run.</label>
+      <button class="primary" id="start-run">Запустити</button>
+    </div>
+
+    <div id="terminal">
+      <div class="titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="label" id="run-titlebar">pin_pipeline — очікує запуску</span>
+      </div>
+      <div id="log"><div class="empty">Лог з'явиться тут під час запуску.</div></div>
+    </div>
+
+    <div class="card" id="run-summary-card" style="display:none">
+      <div class="stat-label">Summary</div>
+      <table id="run-summary-table"><thead>
+        <tr><th>Product</th><th>Price</th><th>Images</th><th>Pins</th><th>Board</th><th>Status</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="view" id="view-history">
+    <h1>History</h1>
+    <p class="subtitle">Останні згенеровані піни і продукти, позначені як опубліковані.</p>
+    <div class="status-line">
+      <div class="stat-label">Pins</div>
+      <button class="small" id="refresh-history">Оновити</button>
+    </div>
+    <div class="card">
+      <table id="pins-table"><thead>
+        <tr><th>#</th><th>Product</th><th>Title</th><th>Board</th><th>Created</th><th>Mode</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+    <div class="stat-label">Posted products (dedup)</div>
+    <div class="card">
+      <table id="posted-table"><thead>
+        <tr><th>Product ID</th><th>Title</th><th>Posted at</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="view" id="view-settings">
+    <h1>Settings</h1>
+    <p class="subtitle">Ключі пишуться в .env. Після збереження треба перезапустити сервер.</p>
+    <div class="card">
+      <div id="settings-badges" class="grid" style="margin-bottom:8px"></div>
+
+      <label>ANTHROPIC_API_KEY <span class="hint">(console.anthropic.com)</span></label>
+      <input type="password" id="set-anthropic" placeholder="sk-ant-...">
+
+      <label>GEMINI_API_KEY <span class="hint">(aistudio.google.com — основний, безкоштовний ліміт)</span></label>
+      <input type="password" id="set-gemini" placeholder="AIza...">
+
+      <label>FAL_API_KEY <span class="hint">(fal.ai — платний fallback, якщо квота Gemini вичерпалась)</span></label>
+      <input type="password" id="set-fal" placeholder="key_...">
+
+      <label>PINTEREST_APP_ID</label>
+      <input type="password" id="set-pin-app-id">
+
+      <label>PINTEREST_APP_SECRET</label>
+      <input type="password" id="set-pin-app-secret">
+
+      <label>PINTEREST_ACCESS_TOKEN <span class="hint">(або отримай через OAuth нижче)</span></label>
+      <input type="password" id="set-pin-token">
+
+      <button class="primary" id="save-settings">Зберегти в .env</button>
+      <div class="hint" id="settings-save-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="stat-label">Pinterest OAuth</div>
+      <p class="hint" id="redirect-uri-hint"></p>
+      <button id="pinterest-auth-btn">Отримати посилання авторизації</button>
+      <div class="hint" id="pinterest-auth-result"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

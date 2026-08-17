@@ -1,0 +1,49 @@
+{
+  "_comment": "Заповнюй вручну раз на тиждень з pinterest.com/business/trends. Пайплайн бере перший тренд зі списку, або вкажи --trend <category> в CLI.",
+  "trends": [
+    {
+      "category": "desk organization",
+      "keywords": [
+        "desk organizer",
+        "home office setup",
+        "work from home desk",
+        "minimalist desk"
+      ],
+      "aesthetic": "minimalist scandinavian, warm neutral tones",
+      "surfaces": [
+        "light oak desk",
+        "white lacquered desk",
+        "walnut desktop"
+      ],
+      "lighting": "soft window daylight from the side",
+      "background_elements": [
+        "laptop edge",
+        "small potted plant",
+        "coffee mug",
+        "notebook"
+      ],
+      "audience": "female 25-45, remote workers"
+    },
+    {
+      "category": "bathroom organization",
+      "keywords": [
+        "bathroom organizer",
+        "shower storage",
+        "small bathroom ideas"
+      ],
+      "aesthetic": "clean spa-like, white and beige",
+      "surfaces": [
+        "marble countertop",
+        "white ceramic shelf",
+        "bamboo tray"
+      ],
+      "lighting": "bright diffused bathroom light",
+      "background_elements": [
+        "folded towels",
+        "eucalyptus sprig",
+        "candle"
+      ],
+      "audience": "female 25-45, home decor"
+    }
+  ]
+}

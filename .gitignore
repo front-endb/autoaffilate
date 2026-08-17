@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+pipeline.db
+output/
+uvicorn_web.log
+uvicorn_test.log
