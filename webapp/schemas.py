@@ -24,15 +24,14 @@ class FeedPreviewRequest(BaseModel):
 
 class RunRequest(BaseModel):
     feed_path: str
-    trend: str | None = None
+    trend: str | None = None       # backward-compatible single trend
+    trends: list[str] | None = None  # multi-select — takes priority over `trend` if set
     limit: int = 3
     post: bool = False
 
 
 class SettingsPayload(BaseModel):
     ANTHROPIC_API_KEY: str | None = None
-    GEMINI_API_KEY: str | None = None
-    FAL_API_KEY: str | None = None
     PINTEREST_ACCESS_TOKEN: str | None = None
     PINTEREST_APP_ID: str | None = None
     PINTEREST_APP_SECRET: str | None = None

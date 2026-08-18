@@ -44,8 +44,6 @@ def get_status():
     return {
         "claude": "mock" if claude_client.MOCK else "live",
         "image_gen": "mock" if image_gen.MOCK else "live",
-        "image_gen_gemini": "live" if config.GEMINI_API_KEY else "off",
-        "image_gen_fal": "live" if config.FAL_API_KEY else "off",
         "pinterest": "mock" if pinterest_client.MOCK else "live",
         "trends_path": str(config.TRENDS_PATH),
         "trends_exists": config.TRENDS_PATH.exists(),
@@ -107,9 +105,10 @@ def _execute_run(run_id: str, payload: RunRequest):
     def sink(tag, message, ts):
         q.put({"type": "log", "tag": tag, "message": message, "ts": ts})
 
+    categories = payload.trends if payload.trends else payload.trend
     try:
         with ui.use_sink(sink):
-            summary = pipeline.run(payload.feed_path, payload.trend, payload.limit, payload.post)
+            summary = pipeline.run(payload.feed_path, categories, payload.limit, payload.post)
         _runs[run_id]["status"] = "done"
         _runs[run_id]["summary"] = summary or []
         q.put({"type": "done", "summary": jsonable_encoder(summary or [])})
@@ -172,8 +171,6 @@ def _write_env_var(key: str, value: str):
 def get_settings():
     return {
         "ANTHROPIC_API_KEY": bool(config.ANTHROPIC_API_KEY),
-        "GEMINI_API_KEY": bool(config.GEMINI_API_KEY),
-        "FAL_API_KEY": bool(config.FAL_API_KEY),
         "PINTEREST_ACCESS_TOKEN": bool(config.PINTEREST_ACCESS_TOKEN),
         "PINTEREST_APP_ID": bool(config.PINTEREST_APP_ID),
         "PINTEREST_APP_SECRET": bool(config.PINTEREST_APP_SECRET),
@@ -223,6 +220,11 @@ def get_history(limit: int = 200):
         "pins": db.recent_pins(limit),
         "posted_products": db.posted_products(limit),
     }
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(STATIC_DIR / "favicon.ico")
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
