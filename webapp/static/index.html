@@ -3,14 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>Pin Pipeline</title>
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
 <div id="sidebar">
   <div class="brand">
-    <div class="name">PIN PIPELINE</div>
-    <div class="tag">trend → feed → claude → images → pinterest</div>
+    <img src="/static/logo.png" alt="" class="brand-logo">
+    <div class="brand-text">
+      <div class="name">PIN PIPELINE</div>
+    </div>
   </div>
   <div class="nav-item active" data-view="dashboard">Dashboard</div>
   <div class="nav-item" data-view="trends">Trends</div>
@@ -78,12 +81,13 @@
     <div class="card">
       <label>Фід</label>
       <select id="run-feed-select"></select>
-      <label>Тренд</label>
-      <select id="run-trend-select"></select>
-      <label>Ліміт продуктів</label>
+      <label>Тренди <span class="hint">(Ctrl/Cmd+клік — вибрати кілька за раз)</span></label>
+      <select id="run-trend-select" multiple size="4"></select>
+      <label>Ліміт продуктів <span class="hint">(на кожен тренд)</span></label>
       <input type="number" id="run-limit" value="2" min="1" max="50">
       <label><input type="checkbox" id="run-post"> Реально публікувати (--post). Без токена все одно dry-run.</label>
       <button class="primary" id="start-run">Запустити</button>
+      <div class="hint">Кожен пін публікується на ВСІ запропоновані борди (не тільки перший) — більше охоплення на пін.</div>
     </div>
 
     <div id="terminal">
@@ -133,11 +137,7 @@
       <label>ANTHROPIC_API_KEY <span class="hint">(console.anthropic.com)</span></label>
       <input type="password" id="set-anthropic" placeholder="sk-ant-...">
 
-      <label>GEMINI_API_KEY <span class="hint">(aistudio.google.com — основний, безкоштовний ліміт)</span></label>
-      <input type="password" id="set-gemini" placeholder="AIza...">
-
-      <label>FAL_API_KEY <span class="hint">(fal.ai — платний fallback, якщо квота Gemini вичерпалась)</span></label>
-      <input type="password" id="set-fal" placeholder="key_...">
+      <div class="hint">Image generation — Pollinations AI, безкоштовно, без ключа. Нічого налаштовувати не треба.</div>
 
       <label>PINTEREST_APP_ID</label>
       <input type="password" id="set-pin-app-id">

@@ -38,15 +38,13 @@ async function loadStatus() {
   const badge = v => `<span class="badge ${v}">${v}</span>`;
   grid.innerHTML = `
     <div class="card"><div class="stat-label">Claude</div><div class="stat-value">${badge(s.claude)}</div></div>
-    <div class="card"><div class="stat-label">Gemini (nano banana)</div><div class="stat-value">${badge(s.image_gen_gemini)}</div></div>
-    <div class="card"><div class="stat-label">fal.ai (fallback)</div><div class="stat-value">${badge(s.image_gen_fal)}</div></div>
+    <div class="card"><div class="stat-label">Image gen (Pollinations)</div><div class="stat-value">${badge(s.image_gen)}</div></div>
     <div class="card"><div class="stat-label">Pinterest</div><div class="stat-value">${badge(s.pinterest)}</div></div>
   `;
   const mini = document.getElementById("status-mini");
   mini.innerHTML = `
     <div class="row"><span>claude</span>${badge(s.claude)}</div>
-    <div class="row"><span>gemini</span>${badge(s.image_gen_gemini)}</div>
-    <div class="row"><span>fal.ai</span>${badge(s.image_gen_fal)}</div>
+    <div class="row"><span>images</span>${badge(s.image_gen)}</div>
     <div class="row"><span>pinterest</span>${badge(s.pinterest)}</div>
   `;
   return s;
@@ -230,7 +228,8 @@ function appendLog(tag, message, ts) {
 
 document.getElementById("start-run").addEventListener("click", async () => {
   const feed_path = document.getElementById("run-feed-select").value;
-  const trend = document.getElementById("run-trend-select").value;
+  const trendSelect = document.getElementById("run-trend-select");
+  const trends = Array.from(trendSelect.selectedOptions).map(o => o.value);
   const limit = Number(document.getElementById("run-limit").value);
   const post = document.getElementById("run-post").checked;
   const btn = document.getElementById("start-run");
@@ -246,7 +245,7 @@ document.getElementById("start-run").addEventListener("click", async () => {
     const { run_id } = await api("/api/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ feed_path, trend, limit, post }),
+      body: JSON.stringify({ feed_path, trends, limit, post }),
     });
     titlebar.textContent = `pin_pipeline — run ${run_id}`;
     const es = new EventSource(`/api/run/${run_id}/stream`);
@@ -293,7 +292,7 @@ async function loadHistory() {
   pinsBody.innerHTML = data.pins.length
     ? data.pins.map(p => `
         <tr><td>${p.id}</td><td>${escapeHtml(p.product_id)}</td><td>${escapeHtml(p.title)}</td>
-        <td>${escapeHtml(p.board_id)}</td><td>${escapeHtml((p.created_at||"").slice(0,19))}</td>
+        <td>${escapeHtml(p.board_name || p.board_id)}</td><td>${escapeHtml((p.created_at||"").slice(0,19))}</td>
         <td>${p.dry_run ? "dry-run" : "posted"}</td></tr>`).join("")
     : `<tr><td colspan="6" class="empty">Ще немає жодного піна.</td></tr>`;
 
@@ -314,8 +313,6 @@ async function loadSettings() {
        <span class="badge ${isSet ? "set" : "unset"}">${isSet ? "set" : "not set"}</span></div></div>`;
   document.getElementById("settings-badges").innerHTML =
     badge("Anthropic", s.ANTHROPIC_API_KEY) +
-    badge("Gemini", s.GEMINI_API_KEY) +
-    badge("fal.ai", s.FAL_API_KEY) +
     badge("Pinterest token", s.PINTEREST_ACCESS_TOKEN) +
     badge("Pinterest app", s.PINTEREST_APP_ID && s.PINTEREST_APP_SECRET);
   document.getElementById("redirect-uri-hint").textContent =
@@ -327,8 +324,6 @@ document.getElementById("save-settings").addEventListener("click", async () => {
   const payload = {};
   const map = {
     "set-anthropic": "ANTHROPIC_API_KEY",
-    "set-gemini": "GEMINI_API_KEY",
-    "set-fal": "FAL_API_KEY",
     "set-pin-app-id": "PINTEREST_APP_ID",
     "set-pin-app-secret": "PINTEREST_APP_SECRET",
     "set-pin-token": "PINTEREST_ACCESS_TOKEN",

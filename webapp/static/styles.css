@@ -42,6 +42,16 @@ body {
   padding: 0 16px 16px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#sidebar .brand .brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 #sidebar .brand .name { color: #f6f6ef; font-weight: bold; }

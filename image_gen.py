@@ -1,12 +1,10 @@
-"""Image generation with a free-first, cheap-fallback backend chain:
-Gemini 2.5 Flash Image ("nano banana", free tier but rate-limited) is tried
-first, fal.ai flux/schnell (paid, ~$0.003/image) catches whatever Gemini's
-quota rejects, and a labeled placeholder covers the case where neither key
-is set (or both backends fail) so the pipeline stays testable end-to-end."""
-import base64
+"""Image generation via Pollinations AI (genuinely free, zero setup — no key,
+no account, no card). Falls back to a labeled placeholder if the request
+fails (network issue, etc.) so the pipeline stays testable end-to-end."""
 import hashlib
 import io
 import textwrap
+import urllib.parse
 
 import requests
 from PIL import Image, ImageDraw
@@ -14,46 +12,23 @@ from PIL import Image, ImageDraw
 import config
 import ui
 
-MOCK = not (config.GEMINI_API_KEY or config.FAL_API_KEY)
+MOCK = False  # Pollinations needs no key, so real generation is always attempted
 
-FAL_URL = "https://fal.run/fal-ai/flux/schnell"
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/"
-    f"{config.GEMINI_IMAGE_MODEL}:generateContent"
-)
+POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{prompt}"
 
 
-def _generate_gemini(prompt: str) -> Image.Image:
-    resp = requests.post(
-        GEMINI_URL,
-        params={"key": config.GEMINI_API_KEY},
-        json={
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"responseModalities": ["IMAGE"]},
+def _generate_pollinations(prompt: str) -> Image.Image:
+    url = POLLINATIONS_URL.format(prompt=urllib.parse.quote(prompt))
+    resp = requests.get(
+        url,
+        params={
+            "model": "flux", "width": 1024, "height": 1536,
+            "nologo": "true", "enhance": "true",
         },
-        timeout=120,
+        timeout=90,
     )
     resp.raise_for_status()
-    parts = resp.json()["candidates"][0]["content"]["parts"]
-    inline = next(p["inlineData"] for p in parts if "inlineData" in p)
-    return Image.open(io.BytesIO(base64.b64decode(inline["data"])))
-
-
-def _generate_fal(prompt: str) -> Image.Image:
-    resp = requests.post(
-        FAL_URL,
-        headers={"Authorization": f"Key {config.FAL_API_KEY}"},
-        json={
-            "prompt": prompt,
-            "image_size": {"width": config.PIN_WIDTH, "height": config.PIN_HEIGHT},
-            "num_images": 1,
-        },
-        timeout=120,
-    )
-    resp.raise_for_status()
-    image_url = resp.json()["images"][0]["url"]
-    img_bytes = requests.get(image_url, timeout=60).content
-    return Image.open(io.BytesIO(img_bytes))
+    return Image.open(io.BytesIO(resp.content))
 
 
 def _generate_placeholder(prompt: str, reason: str = "") -> Image.Image:
@@ -87,25 +62,17 @@ def crop_to_pin(img: Image.Image) -> Image.Image:
 
 
 def _generate_with_fallback(prompt: str) -> Image.Image:
-    if config.GEMINI_API_KEY:
-        try:
-            img = _generate_gemini(prompt)
-            ui.log("IMAGE", "generated via Gemini (nano banana, free tier)")
-            return img
-        except Exception as e:
-            ui.log("WARN", f"Gemini image gen failed ({e}) — falling back")
-    if config.FAL_API_KEY:
-        try:
-            img = _generate_fal(prompt)
-            ui.log("IMAGE", "generated via fal.ai flux/schnell (paid fallback)")
-            return img
-        except Exception as e:
-            ui.log("WARN", f"fal.ai image gen failed ({e}) — using mock placeholder")
-    return _generate_placeholder(prompt, reason="no working image backend")
+    try:
+        img = _generate_pollinations(prompt)
+        ui.log("IMAGE", "generated via Pollinations AI (free, no key)")
+        return img
+    except Exception as e:
+        ui.log("WARN", f"Pollinations image gen failed ({e}) — using mock placeholder")
+        return _generate_placeholder(prompt, reason="Pollinations unreachable")
 
 
 def generate_pin_image(prompt: str, product_id: str, variation: int) -> str:
-    img = _generate_placeholder(prompt) if MOCK else _generate_with_fallback(prompt)
+    img = _generate_with_fallback(prompt)
     img = crop_to_pin(img)
     path = config.IMAGES_DIR / f"{product_id}_v{variation}.jpg"
     img.save(path, "JPEG", quality=90)

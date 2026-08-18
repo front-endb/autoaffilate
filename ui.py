@@ -10,6 +10,7 @@ import contextvars
 import re
 from datetime import datetime
 
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (BarColumn, Progress, SpinnerColumn, TaskProgressColumn,
@@ -68,11 +69,15 @@ def log(tag: str, message: str):
         sink(tag, _plain(message), ts)
 
 
+BRAND_MARK = "[bold magenta]◆[/bold magenta]"
+
+
 def banner(title: str, subtitle: str = ""):
-    body = f"[bold bright_white]{title}[/bold bright_white]"
+    body = f"{BRAND_MARK} [bold bright_white]{title}[/bold bright_white]"
     if subtitle:
-        body += f"\n[dim]{subtitle}[/dim]"
-    console.print(Panel(body, border_style="magenta", expand=False))
+        body += f"\n  [dim]{subtitle}[/dim]"
+    console.print(Panel(body, border_style="magenta", box=box.ROUNDED,
+                        expand=False, padding=(0, 2)))
 
 
 def progress() -> Progress:
@@ -87,13 +92,15 @@ def progress() -> Progress:
 
 def summary_table(rows: list[dict]):
     """rows: [{product, price, images, pins, board, status}]"""
-    table = Table(title="Pipeline summary", border_style="dim")
-    table.add_column("Product", max_width=40)
+    table = Table(title="Pipeline summary", border_style="dim", box=box.ROUNDED,
+                  header_style="bold magenta", title_style="bold bright_white")
+    table.add_column("Product", max_width=32, overflow="fold")
     table.add_column("Price", justify="right")
     table.add_column("Images", justify="right")
     table.add_column("Pins", justify="right")
-    table.add_column("Board")
+    table.add_column("Boards", max_width=34, overflow="fold")
     table.add_column("Status")
+    total_pins = 0
     for r in rows:
         status_style = "green" if r["status"] == "posted" else "yellow"
         table.add_row(
@@ -101,4 +108,7 @@ def summary_table(rows: list[dict]):
             str(r["pins"]), r["board"],
             f"[{status_style}]{r['status']}[/{status_style}]",
         )
+        total_pins += r["pins"]
     console.print(table)
+    if rows:
+        console.print(f"  [dim]Разом: {len(rows)} товарів, {total_pins} пінів опубліковано[/dim]")

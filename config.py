@@ -8,8 +8,6 @@ BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-FAL_API_KEY = os.getenv("FAL_API_KEY", "").strip()
 PINTEREST_ACCESS_TOKEN = os.getenv("PINTEREST_ACCESS_TOKEN", "").strip()
 PINTEREST_APP_ID = os.getenv("PINTEREST_APP_ID", "").strip()
 PINTEREST_APP_SECRET = os.getenv("PINTEREST_APP_SECRET", "").strip()
@@ -39,14 +37,10 @@ FEED_COLUMN_MAP = {
 }
 
 # --- Image generation ---
-VARIATIONS_PER_PRODUCT = 3          # 3-5; більше = дорожче й довше
+# Кількість варіацій на товар рандомізується (3-5) прямо в claude_client.py,
+# як у оригінальному пості — не фіксоване число тут.
 PIN_WIDTH, PIN_HEIGHT = 1000, 1500  # Pinterest optimal 2:3
-
-# Порядок спроб: Gemini має безкоштовний ліміт (rate-limited, не безмежний) —
-# пробуємо його першим; коли квота вичерпається чи ключа немає, падаємо
-# на платний, але дешевий fal.ai (~$0.003/зображення). Якщо й того нема —
-# mock-заглушка з текстом промпта.
-GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
+# Генерація — Pollinations AI (image_gen.py), безкоштовно, без ключа.
 
 # --- Posting ---
 SECONDS_BETWEEN_PINS = 300  # спокійний темп, щоб виглядати як людина, а не спам
